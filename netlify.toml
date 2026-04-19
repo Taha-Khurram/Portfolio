@@ -1,0 +1,46 @@
+[build]
+  command = "python build.py"
+  publish = "dist"
+
+# Redirects for clean URLs
+[[redirects]]
+  from = "/about"
+  to = "/about/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/contact"
+  to = "/contact/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/services"
+  to = "/services/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/portfolio"
+  to = "/portfolio/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/seo_helper_master"
+  to = "/seo_helper_master/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/time_center"
+  to = "/time_center/index.html"
+  status = 200
+
+# Headers for caching and security
+[[headers]]
+  for = "/static/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"

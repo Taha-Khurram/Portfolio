@@ -9,19 +9,13 @@
       <div class="divider"></div>
     </div>
 
-    <!-- Flash Messages -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        <div class="flash-container">
-          {% for category, message in messages %}
-            <div class="alert alert-{{ category }}">{{ message }}</div>
-          {% endfor %}
-        </div>
-      {% endif %}
-    {% endwith %}
-
-    <!-- Contact Form -->
-    <form class="contact-form" method="POST" action="/send_message">
+    <!-- Contact Form - Netlify Forms -->
+    <form class="contact-form" name="contact" method="POST" data-netlify="true" netlify-honeypot="bot-field" action="/contact/?success=true">
+      <!-- Honeypot field for spam protection -->
+      <p style="display:none;">
+        <label>Don't fill this out: <input name="bot-field" /></label>
+      </p>
+      <input type="hidden" name="form-name" value="contact" />
       <!-- Name -->
       <div class="form-group">
         <input type="text" name="name" placeholder="Your Name" required />
