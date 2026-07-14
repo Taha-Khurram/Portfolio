@@ -3,8 +3,15 @@
 
 {% block content %}
 <div class="admin-header-row">
-  <h1>Projects</h1>
+  <div>
+    <h1>Projects</h1>
+    <p class="admin-dash-sub">
+      {% if projects %}{{ projects|length }} project(s) published{% else %}Manage your portfolio work{% endif %}
+    </p>
+  </div>
+  {% if projects %}
   <a href="{{ url_for('admin_project_new') }}" class="btn btn-primary"><i class="fas fa-plus"></i> Add Project</a>
+  {% endif %}
 </div>
 
 {% if projects %}
@@ -48,9 +55,10 @@
 </div>
 {% else %}
 <div class="admin-empty">
-  <i class="fas fa-folder-open"></i>
-  <p>No projects yet.</p>
-  <a href="{{ url_for('admin_project_new') }}" class="btn btn-primary">Add your first project</a>
+  <span class="admin-empty-icon"><i class="fas fa-folder-open"></i></span>
+  <h2>No projects yet</h2>
+  <p>Create your first project to showcase your work with images &amp; tags.</p>
+  <a href="{{ url_for('admin_project_new') }}" class="btn btn-primary"><i class="fas fa-plus"></i> Add your first project</a>
 </div>
 {% endif %}
 {% endblock %}

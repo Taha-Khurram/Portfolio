@@ -16,32 +16,52 @@
 </head>
 <body class="admin-body">
   {% block shell %}
-  <header class="admin-topbar">
-    <a href="{{ url_for('admin_dashboard') }}" class="admin-brand">
-      <span class="brand-gradient">MTK</span> Admin
-    </a>
-    <nav class="admin-nav">
-      <a href="{{ url_for('admin_dashboard') }}" class="{% if request.endpoint == 'admin_dashboard' %}active{% endif %}">Dashboard</a>
-      <a href="{{ url_for('admin_projects') }}" class="{% if 'project' in request.endpoint %}active{% endif %}">Projects</a>
-      <a href="{{ url_for('admin_settings') }}" class="{% if request.endpoint == 'admin_settings' %}active{% endif %}">Contact Info</a>
-      <a href="{{ url_for('home') }}" target="_blank">View Site <i class="fas fa-external-link-alt"></i></a>
-      <a href="{{ url_for('admin_logout') }}" class="admin-logout">Logout</a>
-    </nav>
-  </header>
+  <div class="admin-shell">
+    <aside class="admin-sidebar">
+      <a href="{{ url_for('admin_dashboard') }}" class="admin-profile">
+        <span class="admin-avatar"><span class="brand-gradient">MTK</span></span>
+        <span class="admin-profile-meta">
+          <span class="admin-profile-name">MTK Admin</span>
+          <span class="admin-profile-role">Portfolio Manager</span>
+        </span>
+      </a>
 
-  <main class="admin-main">
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        <div class="admin-flashes">
-          {% for category, message in messages %}
-            <div class="admin-alert admin-alert-{{ category }}">{{ message }}</div>
-          {% endfor %}
-        </div>
-      {% endif %}
-    {% endwith %}
+      <nav class="admin-sidenav">
+        <a href="{{ url_for('admin_dashboard') }}" class="{% if request.endpoint == 'admin_dashboard' %}active{% endif %}">
+          <i class="fas fa-gauge-high"></i> Dashboard
+        </a>
+        <a href="{{ url_for('admin_projects') }}" class="{% if 'project' in request.endpoint %}active{% endif %}">
+          <i class="fas fa-folder-open"></i> Projects
+        </a>
+        <a href="{{ url_for('admin_settings') }}" class="{% if request.endpoint == 'admin_settings' %}active{% endif %}">
+          <i class="fas fa-address-card"></i> Contact Info
+        </a>
+        <a href="{{ url_for('home') }}" target="_blank">
+          <i class="fas fa-external-link-alt"></i> View Site
+        </a>
+      </nav>
 
-    {% block content %}{% endblock %}
-  </main>
+      <a href="{{ url_for('admin_logout') }}" class="admin-sidenav-logout">
+        <i class="fas fa-right-from-bracket"></i> Logout
+      </a>
+    </aside>
+
+    <div class="admin-content">
+      <main class="admin-main">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="admin-flashes">
+              {% for category, message in messages %}
+                <div class="admin-alert admin-alert-{{ category }}">{{ message }}</div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+  </div>
   {% endblock %}
 </body>
 </html>

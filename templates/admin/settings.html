@@ -3,27 +3,43 @@
 
 {% block content %}
 <div class="admin-header-row">
-  <h1>Contact Info</h1>
+  <div>
+    <h1>Contact Info</h1>
+    <p class="admin-dash-sub">These values appear in the footer, contact page &amp; social links across the site.</p>
+  </div>
 </div>
-<p class="admin-hint">These values appear in the footer, contact page, and social links across the site.</p>
 
 <form method="POST" class="admin-form admin-panel">
   <div class="admin-field">
     <label for="email">Email</label>
-    <input type="email" id="email" name="email" value="{{ settings.email }}" required>
+    <div class="admin-input-icon">
+      <i class="fas fa-envelope"></i>
+      <input type="email" id="email" name="email" value="{{ settings.email }}" required>
+    </div>
   </div>
   <div class="admin-field">
     <label for="phone">Phone</label>
-    <input type="text" id="phone" name="phone" value="{{ settings.phone }}">
+    <div class="admin-input-icon">
+      <i class="fas fa-phone"></i>
+      <input type="text" id="phone" name="phone" value="{{ settings.phone }}">
+    </div>
   </div>
   <div class="admin-field">
     <label for="linkedin_url">LinkedIn URL</label>
-    <input type="url" id="linkedin_url" name="linkedin_url" value="{{ settings.linkedin_url }}">
+    <div class="admin-input-icon">
+      <i class="fab fa-linkedin-in"></i>
+      <input type="url" id="linkedin_url" name="linkedin_url" value="{{ settings.linkedin_url }}">
+    </div>
   </div>
   <div class="admin-field">
     <label for="github_url">GitHub URL</label>
-    <input type="url" id="github_url" name="github_url" value="{{ settings.github_url }}">
+    <div class="admin-input-icon">
+      <i class="fab fa-github"></i>
+      <input type="url" id="github_url" name="github_url" value="{{ settings.github_url }}">
+    </div>
   </div>
-  <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Changes</button>
+  <div class="admin-form-actions">
+    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Changes</button>
+  </div>
 </form>
 {% endblock %}

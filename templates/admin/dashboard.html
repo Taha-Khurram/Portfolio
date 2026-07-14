@@ -3,43 +3,78 @@
 
 {% block content %}
 <div class="admin-header-row">
-  <h1>Dashboard</h1>
-  <a href="{{ url_for('admin_project_new') }}" class="btn btn-primary"><i class="fas fa-plus"></i> Add Project</a>
+  <div>
+    <h1>Dashboard</h1>
+    <p class="admin-dash-sub">Portfolio overview</p>
+  </div>
 </div>
 
-{% if not fb_ready %}
+{% if not db_ready %}
 <div class="admin-alert admin-alert-warning">
-  <strong>Firebase is not connected.</strong>
-  {{ fb_error }} The public site still works with default contact details, but
-  saving settings, adding projects, and uploading images need Firebase configured
-  (<code>FIREBASE_CREDENTIALS</code> + <code>FIREBASE_STORAGE_BUCKET</code>).
+  <strong>Supabase is not connected.</strong>
+  {{ db_error }} The public site still works with default contact details, but
+  saving settings, adding projects, and uploading images need Supabase configured
+  (<code>SUPABASE_URL</code> + <code>SUPABASE_KEY</code> + <code>SUPABASE_BUCKET</code>).
 </div>
 {% endif %}
 
-<div class="admin-cards">
-  <a href="{{ url_for('admin_settings') }}" class="admin-tile">
-    <i class="fas fa-address-card"></i>
-    <h3>Contact Info</h3>
-    <p>Edit email, phone, LinkedIn & GitHub.</p>
-  </a>
-  <a href="{{ url_for('admin_projects') }}" class="admin-tile">
-    <i class="fas fa-folder-open"></i>
-    <h3>Projects</h3>
-    <p>{{ projects|length }} project(s) published.</p>
-  </a>
-  <a href="{{ url_for('admin_project_new') }}" class="admin-tile">
-    <i class="fas fa-plus-circle"></i>
-    <h3>New Project</h3>
-    <p>Add a project with images & tags.</p>
-  </a>
-</div>
+<div class="admin-dash">
+  <section class="admin-dash-main">
+    <div class="admin-panel admin-quicklinks">
+      <div class="admin-panel-head">
+        <h2>Quick Actions</h2>
+      </div>
 
-{% if fb_ready and projects|length == 0 %}
-<div class="admin-seed-box">
-  <p>No projects yet. Want to load your two original projects (SEO Master & Time Center) to start from?</p>
-  <form method="POST" action="{{ url_for('admin_seed') }}">
-    <button type="submit" class="btn btn-ghost"><i class="fas fa-seedling"></i> Seed starter projects</button>
-  </form>
+      <a href="{{ url_for('admin_settings') }}" class="admin-linkrow">
+        <span class="admin-linkrow-icon icon-blue"><i class="fas fa-address-card"></i></span>
+        <span class="admin-linkrow-body">
+          <strong>Contact Info</strong>
+          <span>Edit email, phone, LinkedIn & GitHub.</span>
+        </span>
+        <i class="fas fa-chevron-right admin-linkrow-arrow"></i>
+      </a>
+
+      <a href="{{ url_for('admin_projects') }}" class="admin-linkrow">
+        <span class="admin-linkrow-icon icon-violet"><i class="fas fa-folder-open"></i></span>
+        <span class="admin-linkrow-body">
+          <strong>Projects</strong>
+          <span>{{ projects|length }} project(s) published.</span>
+        </span>
+        <i class="fas fa-chevron-right admin-linkrow-arrow"></i>
+      </a>
+    </div>
+
+    {% if db_ready and projects|length == 0 %}
+    <div class="admin-seed-box">
+      <p>No projects yet. Want to load your two original projects (SEO Master & Time Center) to start from?</p>
+      <form method="POST" action="{{ url_for('admin_seed') }}">
+        <button type="submit" class="btn btn-ghost"><i class="fas fa-seedling"></i> Seed starter projects</button>
+      </form>
+    </div>
+    {% endif %}
+  </section>
+
+  <aside class="admin-dash-side">
+    <div class="admin-side-card">
+      <h3 class="admin-side-title">At a glance</h3>
+      <div class="admin-stat">
+        <span class="admin-stat-label">Published projects</span>
+        <span class="admin-stat-value">{{ projects|length }}</span>
+      </div>
+      <div class="admin-stat">
+        <span class="admin-stat-label">Database</span>
+        <span class="admin-stat-value {% if db_ready %}is-ok{% else %}is-off{% endif %}">
+          {% if db_ready %}Connected{% else %}Offline{% endif %}
+        </span>
+      </div>
+    </div>
+
+    <div class="admin-promo">
+      <i class="fas fa-folder-plus admin-promo-icon"></i>
+      <h3>Add a new project</h3>
+      <p>Showcase your latest work with images &amp; tags.</p>
+      <a href="{{ url_for('admin_project_new') }}" class="btn btn-primary admin-full">New Project</a>
+    </div>
+  </aside>
 </div>
-{% endif %}
 {% endblock %}

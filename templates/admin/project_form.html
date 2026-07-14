@@ -3,7 +3,10 @@
 
 {% block content %}
 <div class="admin-header-row">
-  <h1>{% if action == 'edit' %}Edit Project{% else %}New Project{% endif %}</h1>
+  <div>
+    <h1>{% if action == 'edit' %}Edit Project{% else %}New Project{% endif %}</h1>
+    <p class="admin-dash-sub">{% if action == 'edit' %}Update the details of this project{% else %}Add a project with images &amp; tags{% endif %}</p>
+  </div>
   <a href="{{ url_for('admin_projects') }}" class="btn btn-ghost"><i class="fas fa-arrow-left"></i> Back</a>
 </div>
 
@@ -28,24 +31,33 @@
     <input type="text" id="tags" name="tags" value="{{ project.tags|join(', ') if project and project.tags else '' }}">
   </div>
 
-  <div class="admin-field-row">
-    <div class="admin-field">
-      <label for="card_image">Card Image <span class="admin-hint-inline">(portfolio thumbnail)</span></label>
-      {% if project and project.card_image_url %}
-      <img src="{{ project.card_image_url }}" alt="" class="admin-preview-img">
-      {% endif %}
-      <input type="file" id="card_image" name="card_image" accept="image/*">
-      {% if project and project.card_image_url %}<small class="admin-hint">Leave empty to keep the current image.</small>{% endif %}
-    </div>
+  <div class="admin-field">
+    <label for="card_image">Card Image <span class="admin-hint-inline">(portfolio thumbnail)</span></label>
+    {% if project and project.card_image_url %}
+    <img src="{{ project.card_image_url }}" alt="" class="admin-preview-img">
+    {% endif %}
+    <input type="file" id="card_image" name="card_image" accept="image/*">
+    {% if project and project.card_image_url %}<small class="admin-hint">Leave empty to keep the current image.</small>{% endif %}
+  </div>
 
-    <div class="admin-field">
-      <label for="preview_image">Preview Image <span class="admin-hint-inline">(large image on detail page)</span></label>
-      {% if project and project.preview_image_url %}
-      <img src="{{ project.preview_image_url }}" alt="" class="admin-preview-img">
-      {% endif %}
-      <input type="file" id="preview_image" name="preview_image" accept="image/*">
-      {% if project and project.preview_image_url %}<small class="admin-hint">Leave empty to keep the current image.</small>{% endif %}
+  <div class="admin-field">
+    <label for="gallery_images">Gallery Images <span class="admin-hint-inline">(shown in the detail-page slider — select multiple)</span></label>
+
+    {% if project and project.gallery_urls %}
+    <div class="admin-gallery-grid">
+      {% for url in project.gallery_urls %}
+      <label class="admin-gallery-item">
+        <img src="{{ url }}" alt="Gallery image {{ loop.index }}">
+        <span class="admin-gallery-remove">
+          <input type="checkbox" name="remove_gallery" value="{{ url }}"> Remove
+        </span>
+      </label>
+      {% endfor %}
     </div>
+    <small class="admin-hint">Tick “Remove” to delete an image. New uploads are added to the gallery.</small>
+    {% endif %}
+
+    <input type="file" id="gallery_images" name="gallery_images" accept="image/*" multiple>
   </div>
 
   <div class="admin-field admin-field-narrow">
@@ -53,6 +65,8 @@
     <input type="number" id="order" name="order" value="{{ project.order if project and project.order is defined else 0 }}">
   </div>
 
-  <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> {% if action == 'edit' %}Update{% else %}Create{% endif %} Project</button>
+  <div class="admin-form-actions">
+    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> {% if action == 'edit' %}Update{% else %}Create{% endif %} Project</button>
+  </div>
 </form>
 {% endblock %}

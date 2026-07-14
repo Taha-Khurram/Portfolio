@@ -34,20 +34,96 @@
 </section>
 {% endif %}
 
-<!-- Featured Image Preview Section -->
-{% if project.preview_image_url %}
+<!-- Featured Image Preview Section (slider) -->
+{% set images = project.gallery_urls if project.gallery_urls else ([project.preview_image_url] if project.preview_image_url else []) %}
+{% if images %}
 <section class="featured-preview">
   <div class="preview-container">
     <h2 class="preview-heading">Project Preview</h2>
     <p class="preview-desc">
       Take a quick look at the interface and design of this project.
     </p>
-    <div class="preview-card">
-      <img src="{{ project.preview_image_url }}" alt="{{ project.title }} preview">
+
+    <div class="project-slider" data-slider {% if images|length > 1 %}data-autoplay="3500"{% endif %}>
+      <div class="slider-viewport">
+        <div class="slider-track">
+          {% for img in images %}
+          <div class="slide">
+            <img src="{{ img }}" alt="{{ project.title }} preview {{ loop.index }}" loading="lazy">
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      {% if images|length > 1 %}
+      <button type="button" class="slider-btn slider-prev" aria-label="Previous image">
+        <i class="fas fa-chevron-left"></i>
+      </button>
+      <button type="button" class="slider-btn slider-next" aria-label="Next image">
+        <i class="fas fa-chevron-right"></i>
+      </button>
+
+      <div class="slider-dots" role="tablist">
+        {% for img in images %}
+        <button type="button" class="slider-dot{% if loop.first %} active{% endif %}"
+                data-index="{{ loop.index0 }}" aria-label="Go to image {{ loop.index }}"></button>
+        {% endfor %}
+      </div>
+      {% endif %}
     </div>
   </div>
 </section>
 {% endif %}
 
 <link rel="stylesheet" href="{{ url_for('static', filename='css/projects.css') }}">
+
+<script>
+(function () {
+  document.querySelectorAll("[data-slider]").forEach(function (slider) {
+    var track = slider.querySelector(".slider-track");
+    var slides = slider.querySelectorAll(".slide");
+    if (!track || slides.length < 2) return;
+
+    var dots = slider.querySelectorAll(".slider-dot");
+    var index = 0;
+    var timer = null;
+    var delay = parseInt(slider.getAttribute("data-autoplay"), 10) || 0;
+    var reduced = window.matchMedia &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    function go(i) {
+      index = (i + slides.length) % slides.length;
+      track.style.transform = "translateX(" + (-index * 100) + "%)";
+      dots.forEach(function (d, di) { d.classList.toggle("active", di === index); });
+    }
+    function next() { go(index + 1); }
+    function prev() { go(index - 1); }
+
+    function start() {
+      if (delay && !reduced) { stop(); timer = setInterval(next, delay); }
+    }
+    function stop() { if (timer) { clearInterval(timer); timer = null; } }
+
+    var nextBtn = slider.querySelector(".slider-next");
+    var prevBtn = slider.querySelector(".slider-prev");
+    if (nextBtn) nextBtn.addEventListener("click", function () { next(); start(); });
+    if (prevBtn) prevBtn.addEventListener("click", function () { prev(); start(); });
+    dots.forEach(function (d) {
+      d.addEventListener("click", function () {
+        go(parseInt(d.getAttribute("data-index"), 10)); start();
+      });
+    });
+
+    // Pause while the visitor is hovering/focusing the slider.
+    slider.addEventListener("mouseenter", stop);
+    slider.addEventListener("mouseleave", start);
+    slider.addEventListener("focusin", stop);
+    slider.addEventListener("focusout", start);
+
+    go(0);
+    start();
+  });
+})();
+</script>
+
 {% include "partials/footer.html" %}

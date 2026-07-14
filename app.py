@@ -13,7 +13,7 @@ except ImportError:
     pass
 
 import auth
-import firebase_service as fb
+import supabase_service as db
 
 
 # ------------------------------------------------------------------
@@ -51,7 +51,7 @@ mail = Mail(app)
 # ------------------------------------------------------------------
 @app.context_processor
 def inject_settings():
-    return {"settings": fb.get_settings(), "current_year": datetime.now().year}
+    return {"settings": db.get_settings(), "current_year": datetime.now().year}
 
 
 # ------------------------------------------------------------------
@@ -79,7 +79,7 @@ def services():
 
 @app.route('/portfolio')
 def portfolio():
-    return render_template('portfolio.html', projects=fb.list_projects())
+    return render_template('portfolio.html', projects=db.list_projects())
 
 
 @app.route('/thank-you', methods=['GET', 'POST'])
@@ -93,7 +93,7 @@ def thank_you():
 # ------------------------------------------------------------------
 @app.route('/project/<slug>')
 def project_detail(slug):
-    project = fb.get_project(slug)
+    project = db.get_project(slug)
     if not project:
         abort(404)
     return render_template('project_detail.html', project=project)
@@ -138,7 +138,7 @@ def send_message():
     """
 
     try:
-        recipient = fb.get_settings().get("email")
+        recipient = db.get_settings().get("email")
         msg = Message(subject="New Portfolio Contact Message", recipients=[recipient])
         msg.body = msg_body
         mail.send(msg)
@@ -179,9 +179,9 @@ def admin_logout():
 def admin_dashboard():
     return render_template(
         'admin/dashboard.html',
-        projects=fb.list_projects(),
-        fb_ready=fb.is_configured(),
-        fb_error=fb.config_error(),
+        projects=db.list_projects(),
+        db_ready=db.is_configured(),
+        db_error=db.config_error(),
     )
 
 
@@ -190,7 +190,7 @@ def admin_dashboard():
 def admin_settings():
     if request.method == 'POST':
         try:
-            fb.update_settings({
+            db.update_settings({
                 "email": request.form.get("email"),
                 "phone": request.form.get("phone"),
                 "linkedin_url": request.form.get("linkedin_url"),
@@ -200,13 +200,13 @@ def admin_settings():
             return redirect(url_for('admin_settings'))
         except Exception as e:
             flash(f"Could not save settings: {e}", "danger")
-    return render_template('admin/settings.html', settings=fb.get_settings())
+    return render_template('admin/settings.html', settings=db.get_settings())
 
 
 @app.route('/admin/projects')
 @auth.login_required
 def admin_projects():
-    return render_template('admin/projects_list.html', projects=fb.list_projects())
+    return render_template('admin/projects_list.html', projects=db.list_projects())
 
 
 @app.route('/admin/projects/new', methods=['GET', 'POST'])
@@ -220,7 +220,7 @@ def admin_project_new():
 @app.route('/admin/projects/<project_id>/edit', methods=['GET', 'POST'])
 @auth.login_required
 def admin_project_edit(project_id):
-    project = fb.get_project_by_id(project_id)
+    project = db.get_project_by_id(project_id)
     if not project:
         abort(404)
     if request.method == 'POST':
@@ -232,7 +232,7 @@ def admin_project_edit(project_id):
 @auth.login_required
 def admin_project_delete(project_id):
     try:
-        fb.delete_project(project_id)
+        db.delete_project(project_id)
         flash("Project deleted.", "success")
     except Exception as e:
         flash(f"Could not delete project: {e}", "danger")
@@ -253,19 +253,49 @@ def _save_project(project_id):
         return redirect(request.url)
 
     try:
-        card_url = fb.upload_image(request.files.get("card_image"))
-        preview_url = fb.upload_image(request.files.get("preview_image"))
+        card_url = db.upload_image(request.files.get("card_image"))
         if card_url:
             data["card_image_url"] = card_url
-        if preview_url:
-            data["preview_image_url"] = preview_url
+
+        # ---- Gallery images (feed the detail-page slider) ----
+        # Start from whatever the project already has (edit), drop the ones the
+        # user marked for removal, then append any newly uploaded files.
+        gallery = []
+        if project_id:
+            existing = db.get_project_by_id(project_id) or {}
+            gallery = list(existing.get("gallery_urls") or [])
+            # Back-compat: seed the gallery from a legacy single preview image
+            # so editing an old project doesn't lose it.
+            if not gallery and existing.get("preview_image_url"):
+                gallery = [existing["preview_image_url"]]
+            to_remove = set(request.form.getlist("remove_gallery"))
+            gallery = [u for u in gallery if u not in to_remove]
+
+        gallery.extend(db.upload_images(request.files.getlist("gallery_images")))
+        data["gallery_urls"] = gallery
+
+        # Keep the first gallery image as the preview (legacy field / fallback),
+        # and use it as the card thumbnail on create when none was uploaded.
+        if gallery:
+            data["preview_image_url"] = gallery[0]
+            if not card_url and not project_id:
+                data["card_image_url"] = gallery[0]
 
         if project_id:
-            fb.update_project(project_id, data)
+            db.update_project(project_id, data)
             flash("Project updated.", "success")
         else:
-            fb.create_project(data)
+            db.create_project(data)
             flash("Project created.", "success")
+
+        if db.gallery_column_missing():
+            flash(
+                "Gallery images were not saved: your database is missing the "
+                "'gallery_urls' column. Run this once in the Supabase SQL editor, "
+                "then re-save: "
+                "ALTER TABLE public.projects ADD COLUMN IF NOT EXISTS gallery_urls text[] DEFAULT '{}';",
+                "warning",
+            )
         return redirect(url_for('admin_projects'))
     except Exception as e:
         flash(f"Could not save project: {e}", "danger")
@@ -276,7 +306,7 @@ def _save_project(project_id):
 @auth.login_required
 def admin_seed():
     """One-time: insert the two original projects if the list is empty."""
-    if fb.list_projects():
+    if db.list_projects():
         flash("Projects already exist — seeding skipped.", "warning")
         return redirect(url_for('admin_projects'))
 
@@ -304,7 +334,7 @@ def admin_seed():
     ]
     try:
         for p in seed:
-            fb.create_project(p)
+            db.create_project(p)
         flash("Seeded 2 starter projects.", "success")
     except Exception as e:
         flash(f"Seeding failed: {e}", "danger")

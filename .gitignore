@@ -12,8 +12,6 @@ dist/
 
 # Secrets / environment
 .env
-*serviceAccount*.json
-firebase-credentials*.json
 
 # IDE
 .vscode/

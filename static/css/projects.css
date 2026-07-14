@@ -301,30 +301,102 @@
   margin: 0 auto;
 }
 
-.preview-card {
+/* ---- Image slider / carousel ---- */
+.project-slider {
+  position: relative;
+  max-width: 900px;
+  margin: 0 auto;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: var(--space-3);
-  display: inline-block;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   box-shadow: var(--shadow-sm);
-  transition: transform var(--dur) var(--ease),
-              border-color var(--dur) var(--ease),
-              box-shadow var(--dur) var(--ease);
 }
 
-.preview-card img {
-  max-width: 100%;
+/* Viewport clips the sliding track */
+.slider-viewport {
+  overflow: hidden;
   border-radius: var(--radius);
-  display: block;
 }
 
-.preview-card:hover {
-  transform: translateY(-6px);
-  border-color: var(--border-brand);
-  box-shadow: var(--shadow);
+.slider-track {
+  display: flex;
+  transition: transform 0.55s var(--ease);
+  will-change: transform;
+}
+
+.slide {
+  flex: 0 0 100%;
+  min-width: 100%;
+}
+
+.slide img {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: var(--radius);
+}
+
+/* Prev / next controls */
+.slider-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: rgba(11, 11, 18, 0.6);
+  color: var(--text);
+  font-size: 1rem;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  transition: background var(--dur) var(--ease),
+              border-color var(--dur) var(--ease),
+              transform var(--dur) var(--ease);
+}
+
+.slider-btn:hover {
+  background: var(--gradient-brand);
+  border-color: transparent;
+}
+
+.slider-prev { left: var(--space-4); }
+.slider-next { right: var(--space-4); }
+
+.slider-prev:hover { transform: translateY(-50%) translateX(-2px); }
+.slider-next:hover { transform: translateY(-50%) translateX(2px); }
+
+/* Dots */
+.slider-dots {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+
+.slider-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  background: var(--border);
+  transition: background var(--dur) var(--ease), transform var(--dur) var(--ease);
+}
+
+.slider-dot:hover { background: var(--text-muted); }
+
+.slider-dot.active {
+  background: var(--gradient-brand);
+  transform: scale(1.25);
 }
 
 /* ------------------------------------------------------------
