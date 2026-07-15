@@ -30,7 +30,9 @@ A professional portfolio website showcasing expertise in Software Quality Assura
 - 👤 **Full portfolio experience** — Home, About, Services, Portfolio, and Contact pages sharing a consistent navbar, header, and footer.
 - 📈 **Proven results** — headline metrics (15+ projects, 3K+ test cases, 85% automation coverage, 95% defect detection) surfaced on the Services page.
 - 🗂️ **Dynamic project showcase** — case studies are stored in Supabase and rendered on their own `/project/<slug>` routes, with per-project image galleries.
-- 🔐 **Admin portal** — a password-protected `/admin` dashboard to create, edit, delete, and order projects, upload images, and edit contact details — no code changes needed.
+- 💬 **Editable testimonials** — the "What Clients Say" cards on the home page are managed from the admin panel (add / edit / delete / order).
+- 💼 **LinkedIn-style experience** — the About-page experience timeline is fully editable, with a date-range picker for the time period and automatic grouping of multiple roles at the same company into one card.
+- 🔐 **Admin portal** — a password-protected `/admin` dashboard to manage projects, testimonials, and experience entries, upload images, and edit contact details — no code changes needed.
 - 📬 **Working contact form** — server-side validated form wired to email via Flask-Mail (Mailtrap SMTP), with a dedicated thank-you page.
 - 🛟 **Graceful degradation** — if Supabase isn't configured, the public site still runs on sensible defaults instead of crashing.
 - ⚙️ **Static-site pipeline** — a `build.py` generator renders the Jinja2 templates to plain HTML in `dist/` for Netlify, mocking Flask's `url_for`/`request` so templates stay portable.
@@ -41,7 +43,7 @@ A professional portfolio website showcasing expertise in Software Quality Assura
 - **Frontend:** HTML5, CSS3, JavaScript (per-page CSS/JS modules), design tokens in `static/css/tokens.css`
 - **Templating:** Jinja2 (shared `partials/` for header, navbar, footer)
 - **Backend:** Flask + Flask-Mail (routes, admin portal, contact form)
-- **Database & Storage:** Supabase (Postgres for projects/settings, Storage bucket for images)
+- **Database & Storage:** Supabase (Postgres for projects, testimonials, experiences & settings, Storage bucket for images)
 - **Auth:** Flask session + Werkzeug password hashing (single admin)
 - **Build:** `build.py` static site generator → `dist/`
 - **Deployment:** Netlify (static export) · Gunicorn `Procfile` for full server hosting
@@ -52,7 +54,7 @@ A professional portfolio website showcasing expertise in Software Quality Assura
 SQA_Portfolio/
 ├── templates/                 # Jinja2 HTML templates
 │   ├── partials/              # Reusable components (header, navbar, footer)
-│   ├── admin/                 # Admin portal (login, dashboard, project & settings forms)
+│   ├── admin/                 # Admin portal (dashboard, project/testimonial/experience & settings forms)
 │   ├── home.html
 │   ├── about.html
 │   ├── services.html
@@ -69,8 +71,8 @@ SQA_Portfolio/
 ├── app.py                     # Flask app (public routes, admin routes, contact form)
 ├── auth.py                    # Admin authentication (session + password hash)
 ├── supabase_service.py        # Data layer — the only module that talks to Supabase
-├── supabase_schema.sql        # Database schema + storage bucket setup
-├── migrate.py                 # One-off DB migrations (e.g. gallery_urls column)
+├── supabase_schema.sql        # Database schema (projects, testimonials, experiences, settings) + storage bucket
+├── migrate.py                 # One-off DB migrations (gallery_urls column, testimonials & experiences tables)
 ├── build.py                   # Static site generator
 ├── netlify.toml               # Netlify build config, redirects & headers
 ├── Procfile                   # Gunicorn entry (server hosting)
@@ -108,7 +110,7 @@ python -c "from werkzeug.security import generate_password_hash as g; print(g('y
 ### Supabase setup
 
 1. Create a project at [supabase.com](https://supabase.com).
-2. Open **SQL Editor** and run [`supabase_schema.sql`](supabase_schema.sql) — it creates the `projects` and `settings` tables and the public `project-images` storage bucket.
+2. Open **SQL Editor** and run [`supabase_schema.sql`](supabase_schema.sql) — it creates the `projects`, `testimonials`, `experiences`, and `settings` tables and the public `project-images` storage bucket.
 3. Copy your project URL and **service-role** key (Project Settings → API) into `.env`.
 
 ## 💻 Local Development
@@ -142,9 +144,9 @@ cd dist && python -m http.server 8000
 ## 🗄️ Database Migrations
 
 Schema changes are additive and idempotent. To apply pending migrations
-(e.g. the multi-image `gallery_urls` column) against an existing database,
-set `SUPABASE_DB_URL` (the Postgres connection URI from Supabase → Project
-Settings → Database) in `.env` and run:
+against an existing database — the multi-image `gallery_urls` column and the
+`testimonials` / `experiences` tables — set `SUPABASE_DB_URL` (the Postgres
+connection URI from Supabase → Project Settings → Database) in `.env` and run:
 
 ```bash
 python migrate.py
