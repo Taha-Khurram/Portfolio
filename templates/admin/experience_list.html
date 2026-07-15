@@ -1,0 +1,61 @@
+{% extends "admin/base.html" %}
+{% block title %}Experience{% endblock %}
+
+{% block content %}
+<div class="admin-header-row">
+  <div>
+    <h1>Experience</h1>
+    <p class="admin-dash-sub">
+      {% if experiences %}{{ experiences|length }} experience entr{{ 'y' if experiences|length == 1 else 'ies' }}{% else %}Manage the professional experience timeline on your About page{% endif %}
+    </p>
+  </div>
+  {% if experiences %}
+  <a href="{{ url_for('admin_experience_new') }}" class="btn btn-primary"><i class="fas fa-plus"></i> Add Experience</a>
+  {% endif %}
+</div>
+
+{% if experiences %}
+<div class="admin-table-wrap">
+  <table class="admin-table">
+    <thead>
+      <tr>
+        <th>Role</th>
+        <th>Company</th>
+        <th>Period</th>
+        <th>Reference</th>
+        <th class="admin-actions-col">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for exp in experiences %}
+      <tr>
+        <td><strong>{{ exp.title }}</strong></td>
+        <td>{{ exp.company }}</td>
+        <td>{{ exp.period }}</td>
+        <td>
+          {% if exp.reference_url %}
+          <a href="{{ exp.reference_url }}" target="_blank" rel="noopener" class="admin-icon-btn" title="Open reference"><i class="fab fa-linkedin"></i></a>
+          {% else %}
+          <span class="admin-muted">—</span>
+          {% endif %}
+        </td>
+        <td class="admin-actions-col">
+          <a href="{{ url_for('admin_experience_edit', experience_id=exp.id) }}" class="admin-icon-btn" title="Edit"><i class="fas fa-pen"></i></a>
+          <form method="POST" action="{{ url_for('admin_experience_delete', experience_id=exp.id) }}" onsubmit="return confirm('Delete this experience? This cannot be undone.');" style="display:inline;">
+            <button type="submit" class="admin-icon-btn admin-icon-danger" title="Delete"><i class="fas fa-trash"></i></button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="admin-empty">
+  <span class="admin-empty-icon"><i class="fas fa-briefcase"></i></span>
+  <h2>No experience entries yet</h2>
+  <p>Your About page is currently showing the default sample entry. Add your own to replace it.</p>
+  <a href="{{ url_for('admin_experience_new') }}" class="btn btn-primary"><i class="fas fa-plus"></i> Add your first experience</a>
+</div>
+{% endif %}
+{% endblock %}

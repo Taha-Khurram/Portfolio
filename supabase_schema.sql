@@ -32,6 +32,32 @@ alter table public.projects add column if not exists gallery_urls text[] default
 
 create index if not exists projects_sort_order_idx on public.projects (sort_order, created_at);
 
+-- ---- Testimonials ("What Clients Say" cards on the home page) ----
+create table if not exists public.testimonials (
+    id          uuid primary key default gen_random_uuid(),
+    quote       text not null,
+    name        text,
+    role        text,
+    sort_order  integer default 0,
+    created_at  timestamptz default now()
+);
+
+create index if not exists testimonials_sort_order_idx on public.testimonials (sort_order, created_at);
+
+-- ---- Professional experience (About page timeline, LinkedIn-style) ----
+create table if not exists public.experiences (
+    id             uuid primary key default gen_random_uuid(),
+    title          text not null,          -- role, e.g. "QA Automation Engineer"
+    company        text,                   -- "Genius Mind Zone — Faisalabad, Pakistan"
+    period         text,                   -- "May 2026 - Present · 3 mos"
+    bullets        text[] default '{}',    -- responsibility lines
+    reference_url  text,                   -- LinkedIn reference link
+    sort_order     integer default 0,
+    created_at     timestamptz default now()
+);
+
+create index if not exists experiences_sort_order_idx on public.experiences (sort_order, created_at);
+
 -- ============================================================
 -- Storage bucket for uploaded project images.
 -- The app uses the SERVICE ROLE key, which bypasses RLS, so no
@@ -53,3 +79,5 @@ on conflict (id) do update set public = excluded.public;
 -- ============================================================
 alter table public.settings enable row level security;
 alter table public.projects enable row level security;
+alter table public.testimonials enable row level security;
+alter table public.experiences enable row level security;

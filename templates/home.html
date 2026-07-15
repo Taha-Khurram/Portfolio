@@ -124,32 +124,15 @@
   <h2 class="testimonials-heading">What Clients Say</h2>
 
   <div class="testimonials-container">
-    <!-- Testimonial 1 -->
+    {% for t in testimonials %}
     <div class="testimonial-card">
         <p class="testimonial-text">
-          "Working with Muhammad Taha Khurram was a game-changer for our QA processes. His meticulous attention to detail and automation expertise improved our software reliability dramatically. Highly recommend for any project requiring top-notch QA!"
+          "{{ t.quote }}"
         </p>
-        <h4 class="testimonial-name">Momentum</h4>
-        <span class="testimonial-role">CEO, Momentum</span>
+        {% if t.name %}<h4 class="testimonial-name">{{ t.name }}</h4>{% endif %}
+        {% if t.role %}<span class="testimonial-role">{{ t.role }}</span>{% endif %}
       </div>
-
-    <!-- Testimonial 2 -->
-    <div class="testimonial-card">
-        <p class="testimonial-text">
-          "Muhammad Taha's QA services transformed the way we approach quality. From manual testing to automation, his skills ensured our releases were always flawless. Our SEO tools now perform seamlessly thanks to his testing expertise!"
-        </p>
-        <h4 class="testimonial-name">SEO For Purpose</h4>
-        <span class="testimonial-role">Founder, SEO For Purpose</span>
-      </div>
-
-    <!-- Testimonial 3 -->
-    <div class="testimonial-card">
-        <p class="testimonial-text">
-          "The dedication and professionalism shown by Muhammad Taha Khurram in our projects was outstanding. He delivered thorough testing and clear reports that helped us enhance product quality and user experience significantly."
-        </p>
-        <h4 class="testimonial-name">Meeha</h4>
-        <span class="testimonial-role">Product Manager, Meeha</span>
-      </div>
+    {% endfor %}
   </div>
 </section>
 

@@ -42,6 +42,46 @@ ALLOWED_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "webp", "gif"}
 
 SETTINGS_ROW_ID = "site"
 
+# ------------------------------------------------------------------
+# Fallback content — mirrors the site's original hardcoded cards so
+# the public pages are never empty (before any admin edits, or when
+# Supabase isn't configured / the tables aren't migrated yet).
+# ------------------------------------------------------------------
+DEFAULT_TESTIMONIALS = [
+    {
+        "quote": "Working with Muhammad Taha Khurram was a game-changer for our QA processes. His meticulous attention to detail and automation expertise improved our software reliability dramatically. Highly recommend for any project requiring top-notch QA!",
+        "name": "Momentum",
+        "role": "CEO, Momentum",
+    },
+    {
+        "quote": "Muhammad Taha's QA services transformed the way we approach quality. From manual testing to automation, his skills ensured our releases were always flawless. Our SEO tools now perform seamlessly thanks to his testing expertise!",
+        "name": "SEO For Purpose",
+        "role": "Founder, SEO For Purpose",
+    },
+    {
+        "quote": "The dedication and professionalism shown by Muhammad Taha Khurram in our projects was outstanding. He delivered thorough testing and clear reports that helped us enhance product quality and user experience significantly.",
+        "name": "Meeha",
+        "role": "Product Manager, Meeha",
+    },
+]
+
+DEFAULT_EXPERIENCES = [
+    {
+        "title": "QA Engineer",
+        "company": "Meeha — Lahore, Pakistan",
+        "period": "2024 – Present",
+        "bullets": [
+            "Developed and managed QA process for an AI-driven application optimizing website content for SEO.",
+            "Designed and executed test plans for functional, regression, and performance testing.",
+            "Authored automated UI workflows using Selenium for cross-browser testing.",
+            "Conducted API testing with Postman, ensuring data integrity and error handling.",
+            "Provided feedback to improve AI recommendations and application functionality.",
+            "Actively participated in Agile ceremonies (sprint planning, daily stand-ups).",
+        ],
+        "reference_url": "",
+    },
+]
+
 _client = None        # Supabase client (lazily created)
 _bucket = None        # Storage bucket name
 _init_attempted = False
@@ -266,6 +306,13 @@ def _is_missing_gallery_error(exc):
     )
 
 
+def is_missing_table_error(exc):
+    """Detect the PostgREST error raised when a whole table isn't in the DB yet
+    (e.g. `testimonials`/`experiences` before the migration has been run)."""
+    msg = str(exc)
+    return "PGRST205" in msg or "Could not find the table" in msg
+
+
 def create_project(data):
     """Create a project. Returns the new id."""
     global _gallery_column_missing
@@ -344,6 +391,182 @@ def _clean_project_payload(data):
         except (TypeError, ValueError):
             payload["sort_order"] = 0
     return payload
+
+
+# ------------------------------------------------------------------
+# Testimonials  ("What Clients Say" cards)
+# ------------------------------------------------------------------
+def _row_to_testimonial(row):
+    data = dict(row or {})
+    data["id"] = str(data.get("id"))
+    data["order"] = data.pop("sort_order", 0) or 0
+    return data
+
+
+def list_testimonials():
+    """All testimonials ordered for display. [] on failure/misconfig."""
+    if not _init():
+        return []
+    try:
+        resp = (
+            _client.table("testimonials")
+            .select("*")
+            .order("sort_order")
+            .order("created_at")
+            .execute()
+        )
+        return [_row_to_testimonial(r) for r in (resp.data or [])]
+    except Exception:
+        return []
+
+
+def get_testimonial_by_id(testimonial_id):
+    if not _init():
+        return None
+    try:
+        resp = (
+            _client.table("testimonials")
+            .select("*")
+            .eq("id", testimonial_id)
+            .limit(1)
+            .execute()
+        )
+        rows = resp.data or []
+        if rows:
+            return _row_to_testimonial(rows[0])
+    except Exception:
+        pass
+    return None
+
+
+def _clean_testimonial_payload(data):
+    payload = {
+        "quote": (data.get("quote") or "").strip(),
+        "name": (data.get("name") or "").strip(),
+        "role": (data.get("role") or "").strip(),
+    }
+    if data.get("order") is not None:
+        try:
+            payload["sort_order"] = int(data["order"])
+        except (TypeError, ValueError):
+            payload["sort_order"] = 0
+    return payload
+
+
+def create_testimonial(data):
+    if not _init():
+        raise RuntimeError(config_error() or "Supabase is not configured.")
+    payload = _clean_testimonial_payload(data)
+    payload["created_at"] = datetime.now(timezone.utc).isoformat()
+    resp = _client.table("testimonials").insert(payload).execute()
+    rows = resp.data or []
+    return str(rows[0]["id"]) if rows else None
+
+
+def update_testimonial(testimonial_id, data):
+    if not _init():
+        raise RuntimeError(config_error() or "Supabase is not configured.")
+    payload = _clean_testimonial_payload(data)
+    _client.table("testimonials").update(payload).eq("id", testimonial_id).execute()
+    return testimonial_id
+
+
+def delete_testimonial(testimonial_id):
+    if not _init():
+        raise RuntimeError(config_error() or "Supabase is not configured.")
+    _client.table("testimonials").delete().eq("id", testimonial_id).execute()
+
+
+# ------------------------------------------------------------------
+# Experiences  (About-page professional timeline)
+# ------------------------------------------------------------------
+def _row_to_experience(row):
+    data = dict(row or {})
+    data["id"] = str(data.get("id"))
+    data["order"] = data.pop("sort_order", 0) or 0
+    if not isinstance(data.get("bullets"), list):
+        data["bullets"] = data.get("bullets") or []
+    return data
+
+
+def list_experiences():
+    """All experience entries ordered for display. [] on failure/misconfig."""
+    if not _init():
+        return []
+    try:
+        resp = (
+            _client.table("experiences")
+            .select("*")
+            .order("sort_order")
+            .order("created_at")
+            .execute()
+        )
+        return [_row_to_experience(r) for r in (resp.data or [])]
+    except Exception:
+        return []
+
+
+def get_experience_by_id(experience_id):
+    if not _init():
+        return None
+    try:
+        resp = (
+            _client.table("experiences")
+            .select("*")
+            .eq("id", experience_id)
+            .limit(1)
+            .execute()
+        )
+        rows = resp.data or []
+        if rows:
+            return _row_to_experience(rows[0])
+    except Exception:
+        pass
+    return None
+
+
+def _clean_experience_payload(data):
+    bullets = data.get("bullets")
+    if isinstance(bullets, str):
+        # One responsibility per line in the admin textarea.
+        bullets = [b.strip() for b in bullets.splitlines() if b.strip()]
+    payload = {
+        "title": (data.get("title") or "").strip(),
+        "company": (data.get("company") or "").strip(),
+        "period": (data.get("period") or "").strip(),
+        "bullets": bullets or [],
+        "reference_url": (data.get("reference_url") or "").strip(),
+    }
+    if data.get("order") is not None:
+        try:
+            payload["sort_order"] = int(data["order"])
+        except (TypeError, ValueError):
+            payload["sort_order"] = 0
+    return payload
+
+
+def create_experience(data):
+    if not _init():
+        raise RuntimeError(config_error() or "Supabase is not configured.")
+    payload = _clean_experience_payload(data)
+    payload["created_at"] = datetime.now(timezone.utc).isoformat()
+    resp = _client.table("experiences").insert(payload).execute()
+    rows = resp.data or []
+    return str(rows[0]["id"]) if rows else None
+
+
+def update_experience(experience_id, data):
+    if not _init():
+        raise RuntimeError(config_error() or "Supabase is not configured.")
+    payload = _clean_experience_payload(data)
+    _client.table("experiences").update(payload).eq("id", experience_id).execute()
+    return experience_id
+
+
+def delete_experience(experience_id):
+    if not _init():
+        raise RuntimeError(config_error() or "Supabase is not configured.")
+    _client.table("experiences").delete().eq("id", experience_id).execute()
 
 
 # ------------------------------------------------------------------

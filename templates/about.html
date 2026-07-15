@@ -134,18 +134,55 @@
   </div>
 
   <div class="experience-timeline">
-    <div class="experience-card">
-      <h3>QA Engineer <span>2024 – Present</span></h3>
-      <h4>Meeha — Lahore, Pakistan</h4>
-      <ul>
-        <li>Developed and managed QA process for an AI-driven application optimizing website content for SEO.</li>
-        <li>Designed and executed test plans for functional, regression, and performance testing.</li>
-        <li>Authored automated UI workflows using Selenium for cross-browser testing.</li>
-        <li>Conducted API testing with Postman, ensuring data integrity and error handling.</li>
-        <li>Provided feedback to improve AI recommendations and application functionality.</li>
-        <li>Actively participated in Agile ceremonies (sprint planning, daily stand-ups).</li>
-      </ul>
-    </div>
+    {% for group in experience_groups %}
+      {% if group.roles|length > 1 %}
+      <!-- Multiple roles at the same company → grouped LinkedIn-style card -->
+      <div class="experience-card experience-grouped">
+        <div class="exp-company-head">
+          <span class="exp-company-logo"><i class="fas fa-building"></i></span>
+          <div class="exp-company-info">
+            <h3 class="exp-company-name">{{ group.company }}</h3>
+            <span class="exp-company-meta">{{ group.roles|length }} positions</span>
+          </div>
+        </div>
+
+        <div class="exp-roles">
+          {% for exp in group.roles %}
+          <div class="exp-role">
+            <h4 class="exp-role-title">{{ exp.title }}</h4>
+            {% if exp.period %}<span class="exp-role-period">{{ exp.period }}</span>{% endif %}
+            {% if exp.bullets %}
+            <ul>
+              {% for line in exp.bullets %}<li>{{ line }}</li>{% endfor %}
+            </ul>
+            {% endif %}
+            {% if exp.reference_url %}
+            <a href="{{ exp.reference_url }}" target="_blank" rel="noopener" class="experience-ref">
+              <i class="fab fa-linkedin"></i> View reference on LinkedIn
+            </a>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% else %}
+      {% set exp = group.roles[0] %}
+      <div class="experience-card">
+        <h3>{{ exp.title }}{% if exp.period %} <span>{{ exp.period }}</span>{% endif %}</h3>
+        {% if exp.company %}<h4>{{ exp.company }}</h4>{% endif %}
+        {% if exp.bullets %}
+        <ul>
+          {% for line in exp.bullets %}<li>{{ line }}</li>{% endfor %}
+        </ul>
+        {% endif %}
+        {% if exp.reference_url %}
+        <a href="{{ exp.reference_url }}" target="_blank" rel="noopener" class="experience-ref">
+          <i class="fab fa-linkedin"></i> View reference on LinkedIn
+        </a>
+        {% endif %}
+      </div>
+      {% endif %}
+    {% endfor %}
   </div>
 </section>
 <!-- Education Section -->

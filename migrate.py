@@ -31,6 +31,36 @@ MIGRATIONS = [
         "alter table public.projects "
         "add column if not exists gallery_urls text[] default '{}';",
     ),
+    (
+        "testimonials table (What Clients Say cards)",
+        "create table if not exists public.testimonials ("
+        "  id uuid primary key default gen_random_uuid(),"
+        "  quote text not null,"
+        "  name text,"
+        "  role text,"
+        "  sort_order integer default 0,"
+        "  created_at timestamptz default now()"
+        ");"
+        "create index if not exists testimonials_sort_order_idx "
+        "  on public.testimonials (sort_order, created_at);"
+        "alter table public.testimonials enable row level security;",
+    ),
+    (
+        "experiences table (About-page professional timeline)",
+        "create table if not exists public.experiences ("
+        "  id uuid primary key default gen_random_uuid(),"
+        "  title text not null,"
+        "  company text,"
+        "  period text,"
+        "  bullets text[] default '{}',"
+        "  reference_url text,"
+        "  sort_order integer default 0,"
+        "  created_at timestamptz default now()"
+        ");"
+        "create index if not exists experiences_sort_order_idx "
+        "  on public.experiences (sort_order, created_at);"
+        "alter table public.experiences enable row level security;",
+    ),
 ]
 
 

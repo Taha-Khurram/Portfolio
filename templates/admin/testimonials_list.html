@@ -1,0 +1,53 @@
+{% extends "admin/base.html" %}
+{% block title %}Testimonials{% endblock %}
+
+{% block content %}
+<div class="admin-header-row">
+  <div>
+    <h1>Testimonials</h1>
+    <p class="admin-dash-sub">
+      {% if testimonials %}{{ testimonials|length }} "What Clients Say" card(s){% else %}Manage the "What Clients Say" cards on your home page{% endif %}
+    </p>
+  </div>
+  {% if testimonials %}
+  <a href="{{ url_for('admin_testimonial_new') }}" class="btn btn-primary"><i class="fas fa-plus"></i> Add Testimonial</a>
+  {% endif %}
+</div>
+
+{% if testimonials %}
+<div class="admin-table-wrap">
+  <table class="admin-table">
+    <thead>
+      <tr>
+        <th>Quote</th>
+        <th>Name</th>
+        <th>Role</th>
+        <th class="admin-actions-col">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for t in testimonials %}
+      <tr>
+        <td>{{ t.quote[:120] }}{% if t.quote|length > 120 %}…{% endif %}</td>
+        <td><strong>{{ t.name }}</strong></td>
+        <td>{{ t.role }}</td>
+        <td class="admin-actions-col">
+          <a href="{{ url_for('admin_testimonial_edit', testimonial_id=t.id) }}" class="admin-icon-btn" title="Edit"><i class="fas fa-pen"></i></a>
+          <form method="POST" action="{{ url_for('admin_testimonial_delete', testimonial_id=t.id) }}" onsubmit="return confirm('Delete this testimonial? This cannot be undone.');" style="display:inline;">
+            <button type="submit" class="admin-icon-btn admin-icon-danger" title="Delete"><i class="fas fa-trash"></i></button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="admin-empty">
+  <span class="admin-empty-icon"><i class="fas fa-quote-right"></i></span>
+  <h2>No testimonials yet</h2>
+  <p>Your home page is currently showing the default sample cards. Add your own to replace them.</p>
+  <a href="{{ url_for('admin_testimonial_new') }}" class="btn btn-primary"><i class="fas fa-plus"></i> Add your first testimonial</a>
+</div>
+{% endif %}
+{% endblock %}

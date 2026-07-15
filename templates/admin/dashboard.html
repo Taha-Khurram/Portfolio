@@ -42,6 +42,24 @@
         </span>
         <i class="fas fa-chevron-right admin-linkrow-arrow"></i>
       </a>
+
+      <a href="{{ url_for('admin_experience') }}" class="admin-linkrow">
+        <span class="admin-linkrow-icon icon-blue"><i class="fas fa-briefcase"></i></span>
+        <span class="admin-linkrow-body">
+          <strong>Experience</strong>
+          <span>{{ experiences|length }} entr{{ 'y' if experiences|length == 1 else 'ies' }} — add &amp; edit roles.</span>
+        </span>
+        <i class="fas fa-chevron-right admin-linkrow-arrow"></i>
+      </a>
+
+      <a href="{{ url_for('admin_testimonials') }}" class="admin-linkrow">
+        <span class="admin-linkrow-icon icon-violet"><i class="fas fa-quote-right"></i></span>
+        <span class="admin-linkrow-body">
+          <strong>Testimonials</strong>
+          <span>{{ testimonials|length }} "What Clients Say" card(s).</span>
+        </span>
+        <i class="fas fa-chevron-right admin-linkrow-arrow"></i>
+      </a>
     </div>
 
     {% if db_ready and projects|length == 0 %}

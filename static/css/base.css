@@ -19,11 +19,18 @@ html {
      for browsers that don't support it. */
   scrollbar-gutter: stable;
   overflow-y: scroll;
+  /* Never allow a horizontal scrollbar — clip any stray overflow at the
+     scroll-container level (keeps the sticky navbar working, unlike
+     putting overflow-x on <body>). */
+  overflow-x: hidden;
 }
 
 body {
   margin: 0;
   padding: 0;
+  /* Guard: content can never be wider than the viewport. */
+  max-width: 100%;
+  overflow-x: hidden;
   background: var(--bg);
   color: var(--text-body);
   font-family: var(--font-sans);

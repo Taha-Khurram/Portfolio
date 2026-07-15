@@ -1,0 +1,228 @@
+{% extends "admin/base.html" %}
+{% block title %}{% if action == 'edit' %}Edit Experience{% else %}New Experience{% endif %}{% endblock %}
+
+{% block content %}
+<div class="admin-header-row">
+  <div>
+    <h1>{% if action == 'edit' %}Edit Experience{% else %}New Experience{% endif %}</h1>
+    <p class="admin-dash-sub">An entry in the professional experience timeline on your About page.</p>
+  </div>
+  <a href="{{ url_for('admin_experience') }}" class="btn btn-ghost"><i class="fas fa-arrow-left"></i> Back</a>
+</div>
+
+<form method="POST" class="admin-form admin-panel">
+  <div class="admin-field">
+    <label for="title">Role / Title <span class="req">*</span> <span class="admin-hint-inline">(e.g. QA Automation Engineer)</span></label>
+    <input type="text" id="title" name="title" value="{{ experience.title if experience else '' }}" required>
+  </div>
+
+  <div class="admin-field">
+    <label for="company">Company <span class="admin-hint-inline">(e.g. Genius Mind Zone — Faisalabad, Pakistan)</span></label>
+    <input type="text" id="company" name="company" value="{{ experience.company if experience else '' }}">
+  </div>
+
+  <div class="admin-field">
+    <label for="period">Time Period <span class="admin-hint-inline">(pick start &amp; end dates — like LinkedIn)</span></label>
+    <div class="admin-input-icon admin-period-field">
+      <i class="fas fa-calendar-days"></i>
+      <input type="text" id="period" name="period" value="{{ experience.period if experience else '' }}"
+             placeholder="Click to choose dates" readonly>
+    </div>
+  </div>
+
+  <div class="admin-field">
+    <label for="bullets">Responsibilities <span class="admin-hint-inline">(one bullet point per line)</span></label>
+    <textarea id="bullets" name="bullets" rows="8" placeholder="Built and maintained web automation frameworks using Selenium with Java and TestNG.&#10;Developed fast, modern end-to-end UI web test suites using Playwright.">{{ experience.bullets|join('\n') if experience and experience.bullets else '' }}</textarea>
+  </div>
+
+  <div class="admin-field">
+    <label for="reference_url">LinkedIn Reference <span class="admin-hint-inline">(link to this role/company on LinkedIn)</span></label>
+    <div class="admin-input-icon">
+      <i class="fab fa-linkedin-in"></i>
+      <input type="url" id="reference_url" name="reference_url" value="{{ experience.reference_url if experience else '' }}" placeholder="https://www.linkedin.com/in/…">
+    </div>
+  </div>
+
+  <div class="admin-field admin-field-narrow">
+    <label for="order">Display Order <span class="admin-hint-inline">(lower shows first)</span></label>
+    <input type="number" id="order" name="order" value="{{ experience.order if experience and experience.order is defined else 0 }}">
+  </div>
+
+  <div class="admin-form-actions">
+    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> {% if action == 'edit' %}Update{% else %}Add{% endif %} Experience</button>
+  </div>
+</form>
+
+<!-- ============ Date-range picker modal (LinkedIn-style) ============ -->
+<div class="date-modal" id="dateModal" hidden>
+  <div class="date-modal-backdrop" data-close></div>
+  <div class="date-modal-card" role="dialog" aria-modal="true" aria-labelledby="dateModalTitle">
+    <div class="date-modal-head">
+      <h3 id="dateModalTitle"><i class="fas fa-calendar-days"></i> Select time period</h3>
+      <button type="button" class="date-modal-x" data-close aria-label="Close"><i class="fas fa-times"></i></button>
+    </div>
+
+    <div class="date-modal-body">
+      <div class="date-group">
+        <span class="date-group-label">Start date</span>
+        <div class="date-row">
+          <select id="startMonth" class="date-select" aria-label="Start month"></select>
+          <select id="startYear" class="date-select" aria-label="Start year"></select>
+        </div>
+      </div>
+
+      <label class="date-check">
+        <input type="checkbox" id="currentRole"> I currently work here
+      </label>
+
+      <div class="date-group" id="endGroup">
+        <span class="date-group-label">End date</span>
+        <div class="date-row">
+          <select id="endMonth" class="date-select" aria-label="End month"></select>
+          <select id="endYear" class="date-select" aria-label="End year"></select>
+        </div>
+      </div>
+
+      <div class="date-preview" id="datePreview"></div>
+    </div>
+
+    <div class="date-modal-foot">
+      <button type="button" class="btn btn-ghost" data-close>Cancel</button>
+      <button type="button" class="btn btn-primary" id="applyDates"><i class="fas fa-check"></i> Apply</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const MONTHS = ["January","February","March","April","May","June",
+                  "July","August","September","October","November","December"];
+  const MONTHS_SHORT = ["Jan","Feb","Mar","Apr","May","Jun",
+                        "Jul","Aug","Sep","Oct","Nov","Dec"];
+
+  const periodInput  = document.getElementById("period");
+  const modal        = document.getElementById("dateModal");
+  const startMonth   = document.getElementById("startMonth");
+  const startYear    = document.getElementById("startYear");
+  const endMonth     = document.getElementById("endMonth");
+  const endYear      = document.getElementById("endYear");
+  const currentRole  = document.getElementById("currentRole");
+  const endGroup     = document.getElementById("endGroup");
+  const preview      = document.getElementById("datePreview");
+
+  const now       = new Date();
+  const thisYear  = now.getFullYear();
+  const thisMonth = now.getMonth(); // 0-based
+
+  // ---- Populate the month & year <select>s ----
+  MONTHS.forEach((m, i) => {
+    startMonth.add(new Option(m, i));
+    endMonth.add(new Option(m, i));
+  });
+  for (let y = thisYear + 1; y >= thisYear - 45; y--) {
+    startYear.add(new Option(y, y));
+    endYear.add(new Option(y, y));
+  }
+
+  // Sensible defaults.
+  function setDefaults() {
+    startMonth.value = thisMonth;
+    startYear.value  = thisYear;
+    endMonth.value   = thisMonth;
+    endYear.value    = thisYear;
+    currentRole.checked = false;
+  }
+
+  // ---- Try to pre-fill from an existing value like "May 2026 – Present · 3 mos" ----
+  function prefillFromValue() {
+    setDefaults();
+    const val = (periodInput.value || "").trim();
+    if (!val) return;
+    // Split on any dash variant.
+    const parts = val.split(/[–—-]/).map(s => s.trim());
+    const parseDate = (txt) => {
+      const m = /([A-Za-z]+)\s+(\d{4})/.exec(txt || "");
+      if (!m) return null;
+      const monthIdx = MONTHS.findIndex(
+        mn => mn.toLowerCase().startsWith(m[1].toLowerCase().slice(0, 3))
+      );
+      return monthIdx < 0 ? null : { month: monthIdx, year: parseInt(m[2], 10) };
+    };
+    const s = parseDate(parts[0]);
+    if (s) { startMonth.value = s.month; startYear.value = s.year; }
+    const endText = parts[1] || "";
+    if (/present/i.test(endText)) {
+      currentRole.checked = true;
+    } else {
+      const e = parseDate(endText);
+      if (e) { endMonth.value = e.month; endYear.value = e.year; }
+    }
+    syncEndState();
+  }
+
+  // ---- Duration → "1 yr 3 mos" style ----
+  function durationLabel(sM, sY, eM, eY) {
+    let months = (eY - sY) * 12 + (eM - sM) + 1; // inclusive, matches LinkedIn
+    if (months < 1) return "";
+    const yrs = Math.floor(months / 12);
+    const mos = months % 12;
+    const bits = [];
+    if (yrs) bits.push(yrs + (yrs === 1 ? " yr" : " yrs"));
+    if (mos) bits.push(mos + (mos === 1 ? " mo" : " mos"));
+    return bits.join(" ");
+  }
+
+  function buildString() {
+    const sM = +startMonth.value, sY = +startYear.value;
+    const startLabel = MONTHS_SHORT[sM] + " " + sY;
+    let eM, eY, endLabel;
+    if (currentRole.checked) {
+      endLabel = "Present"; eM = thisMonth; eY = thisYear;
+    } else {
+      eM = +endMonth.value; eY = +endYear.value;
+      endLabel = MONTHS_SHORT[eM] + " " + eY;
+    }
+    let out = startLabel + " – " + endLabel;
+    const dur = durationLabel(sM, sY, eM, eY);
+    if (dur) out += " · " + dur;
+    return out;
+  }
+
+  function updatePreview() {
+    const sM = +startMonth.value, sY = +startYear.value;
+    const eM = currentRole.checked ? thisMonth : +endMonth.value;
+    const eY = currentRole.checked ? thisYear  : +endYear.value;
+    if (!currentRole.checked && (eY < sY || (eY === sY && eM < sM))) {
+      preview.textContent = "End date can't be before the start date.";
+      preview.classList.add("is-error");
+      return false;
+    }
+    preview.classList.remove("is-error");
+    preview.textContent = buildString();
+    return true;
+  }
+
+  function syncEndState() {
+    endGroup.style.display = currentRole.checked ? "none" : "";
+    updatePreview();
+  }
+
+  function openModal() { prefillFromValue(); modal.hidden = false; document.body.style.overflow = "hidden"; }
+  function closeModal() { modal.hidden = true; document.body.style.overflow = ""; }
+
+  // ---- Wire up ----
+  periodInput.addEventListener("click", openModal);
+  periodInput.addEventListener("focus", openModal);
+  modal.querySelectorAll("[data-close]").forEach(el => el.addEventListener("click", closeModal));
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && !modal.hidden) closeModal(); });
+  [startMonth, startYear, endMonth, endYear].forEach(el => el.addEventListener("change", updatePreview));
+  currentRole.addEventListener("change", syncEndState);
+
+  document.getElementById("applyDates").addEventListener("click", () => {
+    if (!updatePreview()) return;
+    periodInput.value = buildString();
+    closeModal();
+  });
+})();
+</script>
+{% endblock %}

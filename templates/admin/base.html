@@ -33,6 +33,12 @@
         <a href="{{ url_for('admin_projects') }}" class="{% if 'project' in request.endpoint %}active{% endif %}">
           <i class="fas fa-folder-open"></i> Projects
         </a>
+        <a href="{{ url_for('admin_experience') }}" class="{% if 'experience' in request.endpoint %}active{% endif %}">
+          <i class="fas fa-briefcase"></i> Experience
+        </a>
+        <a href="{{ url_for('admin_testimonials') }}" class="{% if 'testimonial' in request.endpoint %}active{% endif %}">
+          <i class="fas fa-quote-right"></i> Testimonials
+        </a>
         <a href="{{ url_for('admin_settings') }}" class="{% if request.endpoint == 'admin_settings' %}active{% endif %}">
           <i class="fas fa-address-card"></i> Contact Info
         </a>

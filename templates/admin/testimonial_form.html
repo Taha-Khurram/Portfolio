@@ -1,0 +1,38 @@
+{% extends "admin/base.html" %}
+{% block title %}{% if action == 'edit' %}Edit Testimonial{% else %}New Testimonial{% endif %}{% endblock %}
+
+{% block content %}
+<div class="admin-header-row">
+  <div>
+    <h1>{% if action == 'edit' %}Edit Testimonial{% else %}New Testimonial{% endif %}</h1>
+    <p class="admin-dash-sub">Content for a "What Clients Say" card on the home page.</p>
+  </div>
+  <a href="{{ url_for('admin_testimonials') }}" class="btn btn-ghost"><i class="fas fa-arrow-left"></i> Back</a>
+</div>
+
+<form method="POST" class="admin-form admin-panel">
+  <div class="admin-field">
+    <label for="quote">Testimonial <span class="req">*</span> <span class="admin-hint-inline">(the quoted text on the card)</span></label>
+    <textarea id="quote" name="quote" rows="5" required>{{ testimonial.quote if testimonial else '' }}</textarea>
+  </div>
+
+  <div class="admin-field">
+    <label for="name">Name <span class="admin-hint-inline">(client or company)</span></label>
+    <input type="text" id="name" name="name" value="{{ testimonial.name if testimonial else '' }}">
+  </div>
+
+  <div class="admin-field">
+    <label for="role">Role <span class="admin-hint-inline">(e.g. CEO, Momentum)</span></label>
+    <input type="text" id="role" name="role" value="{{ testimonial.role if testimonial else '' }}">
+  </div>
+
+  <div class="admin-field admin-field-narrow">
+    <label for="order">Display Order <span class="admin-hint-inline">(lower shows first)</span></label>
+    <input type="number" id="order" name="order" value="{{ testimonial.order if testimonial and testimonial.order is defined else 0 }}">
+  </div>
+
+  <div class="admin-form-actions">
+    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> {% if action == 'edit' %}Update{% else %}Add{% endif %} Testimonial</button>
+  </div>
+</form>
+{% endblock %}

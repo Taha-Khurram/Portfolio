@@ -45,6 +45,16 @@ app.config.update(
 
 mail = Mail(app)
 
+# Shown when a write hits a table that hasn't been created in Supabase yet.
+# The migration runner (migrate.py) creates the testimonials & experiences
+# tables in one step.
+MISSING_TABLE_MSG = (
+    "This section's database table doesn't exist yet. Run the one-time "
+    "migration to create it: add SUPABASE_DB_URL to your .env (Supabase → "
+    "Project Settings → Database → Connection string → URI), then run "
+    "\"python migrate.py\". Your entry was not saved."
+)
+
 
 # ------------------------------------------------------------------
 # Inject site settings (email/phone/socials) into every template
@@ -59,12 +69,34 @@ def inject_settings():
 # ------------------------------------------------------------------
 @app.route('/')
 def home():
-    return render_template('home.html')
+    # Fall back to the original hardcoded cards until the admin adds their own.
+    return render_template(
+        'home.html',
+        testimonials=db.list_testimonials() or db.DEFAULT_TESTIMONIALS,
+    )
+
+
+def _group_experiences(experiences):
+    """Group consecutive experience entries by company so multiple roles at the
+    same employer render as one LinkedIn-style card. Preserves display order."""
+    groups = []
+    index = {}
+    for exp in experiences:
+        key = (exp.get("company") or "").strip().lower()
+        if key not in index:
+            index[key] = {"company": exp.get("company") or "", "roles": []}
+            groups.append(index[key])
+        index[key]["roles"].append(exp)
+    return groups
 
 
 @app.route('/about')
 def about():
-    return render_template('about.html')
+    experiences = db.list_experiences() or db.DEFAULT_EXPERIENCES
+    return render_template(
+        'about.html',
+        experience_groups=_group_experiences(experiences),
+    )
 
 
 @app.route('/contact')
@@ -180,6 +212,8 @@ def admin_dashboard():
     return render_template(
         'admin/dashboard.html',
         projects=db.list_projects(),
+        testimonials=db.list_testimonials(),
+        experiences=db.list_experiences(),
         db_ready=db.is_configured(),
         db_error=db.config_error(),
     )
@@ -299,6 +333,144 @@ def _save_project(project_id):
         return redirect(url_for('admin_projects'))
     except Exception as e:
         flash(f"Could not save project: {e}", "danger")
+        return redirect(request.url)
+
+
+# ------------------------------------------------------------------
+# Admin — Testimonials ("What Clients Say")
+# ------------------------------------------------------------------
+@app.route('/admin/testimonials')
+@auth.login_required
+def admin_testimonials():
+    return render_template(
+        'admin/testimonials_list.html', testimonials=db.list_testimonials()
+    )
+
+
+@app.route('/admin/testimonials/new', methods=['GET', 'POST'])
+@auth.login_required
+def admin_testimonial_new():
+    if request.method == 'POST':
+        return _save_testimonial(None)
+    return render_template('admin/testimonial_form.html', testimonial=None, action="new")
+
+
+@app.route('/admin/testimonials/<testimonial_id>/edit', methods=['GET', 'POST'])
+@auth.login_required
+def admin_testimonial_edit(testimonial_id):
+    testimonial = db.get_testimonial_by_id(testimonial_id)
+    if not testimonial:
+        abort(404)
+    if request.method == 'POST':
+        return _save_testimonial(testimonial_id)
+    return render_template('admin/testimonial_form.html', testimonial=testimonial, action="edit")
+
+
+@app.route('/admin/testimonials/<testimonial_id>/delete', methods=['POST'])
+@auth.login_required
+def admin_testimonial_delete(testimonial_id):
+    try:
+        db.delete_testimonial(testimonial_id)
+        flash("Testimonial deleted.", "success")
+    except Exception as e:
+        flash(f"Could not delete testimonial: {e}", "danger")
+    return redirect(url_for('admin_testimonials'))
+
+
+def _save_testimonial(testimonial_id):
+    """Shared create/update handler for the testimonial form."""
+    data = {
+        "quote": request.form.get("quote"),
+        "name": request.form.get("name"),
+        "role": request.form.get("role"),
+        "order": request.form.get("order") or 0,
+    }
+    if not data["quote"]:
+        flash("The testimonial text is required.", "warning")
+        return redirect(request.url)
+    try:
+        if testimonial_id:
+            db.update_testimonial(testimonial_id, data)
+            flash("Testimonial updated.", "success")
+        else:
+            db.create_testimonial(data)
+            flash("Testimonial added.", "success")
+        return redirect(url_for('admin_testimonials'))
+    except Exception as e:
+        if db.is_missing_table_error(e):
+            flash(MISSING_TABLE_MSG, "warning")
+        else:
+            flash(f"Could not save testimonial: {e}", "danger")
+        return redirect(request.url)
+
+
+# ------------------------------------------------------------------
+# Admin — Experience (About-page timeline)
+# ------------------------------------------------------------------
+@app.route('/admin/experience')
+@auth.login_required
+def admin_experience():
+    return render_template(
+        'admin/experience_list.html', experiences=db.list_experiences()
+    )
+
+
+@app.route('/admin/experience/new', methods=['GET', 'POST'])
+@auth.login_required
+def admin_experience_new():
+    if request.method == 'POST':
+        return _save_experience(None)
+    return render_template('admin/experience_form.html', experience=None, action="new")
+
+
+@app.route('/admin/experience/<experience_id>/edit', methods=['GET', 'POST'])
+@auth.login_required
+def admin_experience_edit(experience_id):
+    experience = db.get_experience_by_id(experience_id)
+    if not experience:
+        abort(404)
+    if request.method == 'POST':
+        return _save_experience(experience_id)
+    return render_template('admin/experience_form.html', experience=experience, action="edit")
+
+
+@app.route('/admin/experience/<experience_id>/delete', methods=['POST'])
+@auth.login_required
+def admin_experience_delete(experience_id):
+    try:
+        db.delete_experience(experience_id)
+        flash("Experience deleted.", "success")
+    except Exception as e:
+        flash(f"Could not delete experience: {e}", "danger")
+    return redirect(url_for('admin_experience'))
+
+
+def _save_experience(experience_id):
+    """Shared create/update handler for the experience form."""
+    data = {
+        "title": request.form.get("title"),
+        "company": request.form.get("company"),
+        "period": request.form.get("period"),
+        "bullets": request.form.get("bullets"),
+        "reference_url": request.form.get("reference_url"),
+        "order": request.form.get("order") or 0,
+    }
+    if not data["title"]:
+        flash("The role/title is required.", "warning")
+        return redirect(request.url)
+    try:
+        if experience_id:
+            db.update_experience(experience_id, data)
+            flash("Experience updated.", "success")
+        else:
+            db.create_experience(data)
+            flash("Experience added.", "success")
+        return redirect(url_for('admin_experience'))
+    except Exception as e:
+        if db.is_missing_table_error(e):
+            flash(MISSING_TABLE_MSG, "warning")
+        else:
+            flash(f"Could not save experience: {e}", "danger")
         return redirect(request.url)
 
 
