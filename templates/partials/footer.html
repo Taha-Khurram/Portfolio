@@ -37,7 +37,11 @@
 
   <div class="footer-bottom">
     <p>© {{ current_year }} Muhammad Taha Khurram. All Rights Reserved.</p>
+    {# Admin runs only on the Flask server (localhost). Hidden in the static
+       Netlify build, where there is no /admin route to serve. #}
+    {% if not is_static_build %}
     <a href="{{ url_for('admin_dashboard') }}" class="footer-admin-link">Admin</a>
+    {% endif %}
   </div>
 </footer>
 <link rel="stylesheet" href="{{ url_for('static', filename='css/footer.css') }}">

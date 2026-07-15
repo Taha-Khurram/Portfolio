@@ -108,6 +108,9 @@ def build_site():
         "settings": settings,
         "current_year": datetime.now().year,
         "get_flashed_messages": lambda with_categories=False: [],
+        # Marks this as the static export so templates can hide server-only
+        # features (e.g. the Admin link, which has no static route).
+        "is_static_build": True,
     }
 
     def render(template_name, output_path, endpoint, **extra):
