@@ -1,6 +1,9 @@
 [build]
-  command = "python build.py"
+  command = "pip install -r requirements.txt && python build.py"
   publish = "dist"
+
+[build.environment]
+  PYTHON_VERSION = "3.11"
 
 # Redirects for clean URLs
 [[redirects]]
@@ -24,19 +27,26 @@
   status = 200
 
 [[redirects]]
-  from = "/seo_helper_master"
-  to = "/seo_helper_master/index.html"
-  status = 200
-
-[[redirects]]
-  from = "/time_center"
-  to = "/time_center/index.html"
-  status = 200
-
-[[redirects]]
   from = "/thank-you"
   to = "/thank-you/index.html"
   status = 200
+
+# Dynamic project pages (generated per Supabase slug)
+[[redirects]]
+  from = "/project/*"
+  to = "/project/:splat/index.html"
+  status = 200
+
+# Legacy project URLs → new dynamic slugs
+[[redirects]]
+  from = "/seo_helper_master"
+  to = "/project/seo-master"
+  status = 301
+
+[[redirects]]
+  from = "/time_center"
+  to = "/project/time-center-ecommerce"
+  status = 301
 
 # Headers for caching and security
 [[headers]]

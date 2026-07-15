@@ -2,7 +2,8 @@
 /contact    /contact/index.html    200
 /services    /services/index.html    200
 /portfolio    /portfolio/index.html    200
-/seo_helper_master    /seo_helper_master/index.html    200
-/time_center    /time_center/index.html    200
 /thank-you    /thank-you/index.html    200
 /thank-you/    /thank-you/index.html    200
+/project/*    /project/:splat/index.html    200
+/seo_helper_master    /project/seo-master    301
+/time_center    /project/time-center-ecommerce    301
